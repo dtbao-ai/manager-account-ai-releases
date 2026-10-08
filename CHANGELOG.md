@@ -6,6 +6,20 @@ the marker line — do not remove it, and do not reorder what is under it.
 
 <!-- releases -->
 
+## v0.2.9 — 2026-10-08
+
+### Changed
+
+- **T114** — The overlay position picker is laid out evenly: six choices of
+  the same size in three equal columns, the selected one outlined in blue.
+
+### Added
+
+- **T113** — *Settings › Usage overlay* now has a position picker: top left,
+  top centre, top right, bottom left, bottom centre or bottom right of the main
+  display. It applies at once and is remembered; bottom right stays the
+  default.
+
 ## v0.2.8 — 2026-10-08
 
 ### Changed
