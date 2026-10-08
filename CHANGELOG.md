@@ -6,6 +6,181 @@ the marker line — do not remove it, and do not reorder what is under it.
 
 <!-- releases -->
 
+## v0.2.8 — 2026-10-08
+
+### Changed
+
+- **T112** — The usage overlay is now only as big as what it shows. The bar
+  style drops the account name and keeps just the two figures; every other
+  style is trimmed to its content, with room kept for a figure of 100%. The
+  list style no longer cuts off the bottom of its last row.
+- **T111** — The Usage table's header row no longer has a grey band of its
+  own; it now reads as part of the card, like the rows under it.
+- **T110** — The dark theme now sits on plain black. The blue and purple glow
+  behind the pages is gone, so every page has the same background; the light
+  theme keeps its soft gradient.
+- **T109** — Every rectangular surface now has the same small 5 px corner:
+  cards, sidebar, status bar, buttons, fields, rows, dialogs, banners and the
+  overlay. Switches, avatars, round icon buttons and pill badges stay round.
+- **T108** — The usage overlay now always sits in the bottom-right corner of
+  the main display, just above the taskbar, whatever its style; a taller style
+  grows upward from that corner. It can no longer be dragged, so the position
+  it used to remember is gone, and an old saved one is ignored. A change of
+  resolution, scaling or taskbar puts it back in the corner.
+
+### Fixed
+
+- **T107** — The Accounts page now shows usage the moment the app opens.
+  It used to only read what the poller already had, and the poller did not
+  start until the Usage page was opened, so every ring said "not polled yet".
+  It now starts polling the same way the Usage page does: once, and a running
+  poller is only swept again when its figures are older than one interval.
+  Polling, and the automatic rotation that follows it, therefore begins when
+  the main window first opens.
+
+### Added
+
+- **T106** — A new look: glass, after Apple's iOS and visionOS materials.
+
+  Content now sits on translucent cards floating over a soft coloured
+  backdrop, with a floating sidebar and status bar, larger rounded corners,
+  Windows' Display type for titles, and Apple's system blue as the accent.
+  Every on/off setting is a switch; buttons and the sidebar answer the moment
+  they are pressed; dialogs rise in as solid sheets over a dimmed, blurred app.
+  Light and dark both follow the new palette.
+
+  The Accounts page is now a grid of cards, each with the account's 5-hour and
+  7-day usage as rings — the same rings the overlay's *Ring* style draws, and
+  the same rule that an account the poller has not reached says so instead of
+  showing zero. The overlay itself picks up the material: a tinted frame with
+  a highlight along its top edge, round buttons, and nothing smaller than 12 px.
+
+  If Windows is set to reduce transparency, every glass surface turns solid;
+  with high contrast, the hairlines become real borders; with reduced motion,
+  nothing scales or slides.
+
+  The app icon is unchanged and still uses the previous green.
+
+- **T105** — The usage overlay comes in five styles, chosen in *Settings ›
+  Usage overlay*, which also switches it on and off.
+
+  | Style | What it shows |
+  |-------|---------------|
+  | Bar | One line: the active account, both windows as a meter and a percentage |
+  | Ring | Two rings, 5-hour and 7-day, with the percentage inside |
+  | Compact | The smallest: the active account and whichever window is fuller |
+  | Card | Both windows with their reset times, and how fresh the figures are |
+  | List | Every enabled account, one row each, the active one marked |
+
+  Both controls apply the moment they are clicked, like the theme; the overlay
+  resizes itself to the new style on the spot. *Save* no longer sends the
+  overlay settings at all, so a form left open cannot undo a change made from
+  the tray or the overlay itself. The list grows by one row per enabled account
+  up to eight, then says how many more there are.
+
+  No style asks Windows for a window shorter than 40 px: a 34 px `compact` came
+  back 39 px tall, because Windows will not make one shorter.
+
+- **T104** — A usage overlay: a small window that stays on top of everything
+  and keeps the active account's usage in view while the app sits in the tray.
+
+  Turn it on from the tray menu (*Usage overlay*). It opens top-centre of the
+  main display, shows the 5-hour and 7-day figures as a meter and a percentage,
+  never takes the keyboard from whatever you are typing in, and has no taskbar
+  button. Drag it anywhere; it comes back to the same place next start, and if
+  that place was on a monitor that is no longer plugged in it comes back to the
+  main display instead. ↗ opens the app, × (or Alt+F4) turns it off. Figures
+  older than two poll intervals fade and say *stale*.
+
+  It draws the usage poller's figures and never asks Anthropic anything itself,
+  but while it is on it keeps that poller running from launch — so the
+  automatic account rotation now runs from launch too, instead of from the
+  first visit to the Usage page. Same requests at the same staggered cadence.
+
+  Two side fixes the second window needed: every account action now tells all
+  windows about the change (a switch made in the main window left the overlay
+  on the old account), and with *Keep running in the tray* off, closing the
+  main window still quits the app while the overlay is shown.
+
+  This release draws the overlay in the `bar` style only; the other four styles
+  and the Settings picker follow.
+
+- **T103** — Settings and a shared view model for the coming usage overlay.
+
+  Three new settings, all inert until the overlay window lands: `overlayEnabled`
+  (off), `overlayStyle` (`bar`, one of `bar` / `ring` / `compact` / `card` /
+  `list`) and `overlayPosition` (`null` until the overlay is dragged). The main
+  process refuses an unknown style or a position that is not two finite numbers,
+  rounds a position to whole pixels, and puts a hand-edited bad value on disk
+  back to its default at load instead of failing. A vault from an older build
+  picks the defaults up through the usual merge.
+
+  `src/shared/overlay.ts` decides what every style shows, so a style is only a
+  layout: the active account (or, for `list`, every enabled account in rotation
+  order), 5-hour and 7-day figures as whole percentages with the Usage table's
+  80 % / 100 % tones, a reason instead of a figure when there is none — never a
+  0 % — and a stale mark once the newest figure is older than two poll
+  intervals.
+
+- **T102** — Tokens stay alive for every enabled account, not just the one on
+  screen.
+
+  The report was "switch to an account I have not selected in a while and Claude
+  Code asks me to sign in again". The cause was not a guard reading backwards
+  this round — it was that **nothing was calling the refresh chain at all**.
+  `accessTokenFor` only runs when something wants a token, and the only two
+  things that wanted one were the usage poller, which `IPC.usageStart` starts and
+  leaving the Usage page stops, and the inbound server, which is off by default.
+  `activateAccount` then writes the stored pair into `~/.claude` verbatim — no
+  freshness check, no refresh.
+
+  The log file proved it rather than the code being re-read: `app-2026-09-01.log`
+  through `-09-10.log` hold two lines each and never the `polling every …`
+  banner, and `activated embteam03@… (token …wAAA)` appears on 08-31 at 18:02 and
+  again on 09-11 at 16:05 — the same access token, untouched for eleven days,
+  last refreshed on 08-31 at 16:54. The switch handed Claude Code a pair eleven
+  days dead.
+
+  `createTokenKeeper` in `src/main/token-access.ts` is the answer: a background
+  loop started from `index.ts` at `whenReady` and stopped at `will-quit`,
+  deliberately independent of the usage poller because it must run whatever page
+  is open. It sweeps every enabled account through the shared `accessTokenFor`
+  sequentially — at most one token request in flight — once immediately and then
+  every 15 minutes. A sweep over fresh tokens costs no request at all, because
+  `accessTokenFor` returns at its freshness check. A terminal `invalid_grant`
+  puts that account's refresh token into a hold keyed on the token itself, so the
+  loop stops asking until a fresh login changes it; a transient failure is not
+  held and is retried next sweep. Its lines carry the `[tokens]` tag, distinct
+  from the poller's `[usage]`.
+
+  `accessTokenFor` is now one module-level value in `ipc.ts` rather than one built
+  per caller, so the poller, the keeper and the server all queue behind the same
+  `refreshGate` — Anthropic rotates the refresh token on every exchange, and two
+  callers refreshing one account at once leaves a spent pair written over a live
+  one.
+
+  `tests/token-keeper.test.ts` covers the immediate sweep, disabled accounts
+  skipped, the dead-grant hold and its release on a new refresh token, and a
+  transient failure retried.
+
+  **What this does not buy.** A refresh token has two clocks. Its hard expiry does
+  not slide with use — Anthropic's CLI documentation says so, and the pair minted
+  by the 2026-09-11 login came back with `refresh_token_expires_in` of 28.66 days,
+  a fixed date the new login did not push out. The keeper reaches the other clock:
+  a grant that is never used appears to be invalidated server-side well before
+  that date, which `rynfar/meridian` observed directly and answered with the same
+  kind of traffic-independent timer. So an account left past its hard expiry still
+  needs *Login again*, and nothing here changes that.
+
+  Constants cross-checked against other clients speaking this flow rather than
+  taken on trust: the client id, the `platform.claude.com/v1/oauth/token`
+  endpoint, the 8 h access-token lifetime (measured exactly), and the
+  `refresh_token_expires_in` field name all agree. One claim from `meridian` was
+  tested and did **not** reproduce here — that Claude Code cannot read a
+  pretty-printed `.credentials.json` — so this app keeps writing it formatted; the
+  finding is recorded as the first thing to re-test if a switch ever reads as
+  logged out.
+
 ## v0.2.7 — 2026-08-24
 
 ### Removed
